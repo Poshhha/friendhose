@@ -1,0 +1,38 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      HOST: 0.0.0.0
+      DATABASE_PATH: /app/data/unsaid.db
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Set your exact public HTTPS origin in .env}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?Set a strong administrator key in .env}
+      TRUST_PROXY_HOPS: 1
+    volumes:
+      - unsaid_data:/app/data
+    expose:
+      - '3001'
+    init: true
+  web:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      UNSAID_DOMAIN: ${UNSAID_DOMAIN:?Set your domain name in .env}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  unsaid_data:
+  caddy_data:
+  caddy_config:
